@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -25,7 +25,7 @@ def test_health():
 
 
 def test_predict_returns_24_hours():
-    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    t0 = datetime(2026, 1, 1, tzinfo=UTC)
     body = {
         "site": {"site_id": "lahore_pvgis_01", "panel_capacity_kw": 10},
         "history": _rows(t0, 168),
@@ -37,7 +37,7 @@ def test_predict_returns_24_hours():
 
 
 def test_predict_rejects_short_history():
-    t0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    t0 = datetime(2026, 1, 1, tzinfo=UTC)
     body = {
         "site": {"site_id": "x", "panel_capacity_kw": 10},
         "history": _rows(t0, 10),

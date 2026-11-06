@@ -19,11 +19,11 @@ htmlcov/
 *.pem
 .aws/
 
-# Data & artifacts (tracked by DVC / stored in S3 + MLflow, not git)
-data/**
-!data/**/
-!data/**/.gitkeep
-!data/**/*.dvc
+# Data & artifacts (never in git)
+# data/raw and data/processed are DVC-tracked: DVC writes data/.gitignore + data/*.dvc for them.
+# data/interim is daily runtime state, synced to object storage instead.
+/data/interim/*
+!/data/interim/.gitkeep
 models/*
 !models/.gitkeep
 mlruns/

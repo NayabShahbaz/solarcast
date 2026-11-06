@@ -14,9 +14,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
       - name: Install
-        run: pip install -e ".[api,dev]"
+        # uv resolves this dependency set in seconds; plain pip backtracks for 10+ minutes
+        run: |
+          pip install uv
+          uv pip install --system -e ".[data,api,dev]"
       - name: Lint
         run: ruff check src tests
       - name: Test

@@ -26,12 +26,12 @@ NASA POWER / Open-Meteo / PVGIS / inverter CSV
 ```
 ├── configs/sites.yaml          site coordinates, capacity, simulated vs real
 ├── params.yaml                 all pipeline/model parameters
-├── data/                       DVC-tracked, NOT in git (raw/ interim/ processed/ reference/)
+├── data/                       raw/ + processed/ via DVC (data/*.dvc); interim/ = daily state
 ├── src/solarcast/
 │   ├── schemas.py              ★ shared data contract (all three review changes)
 │   ├── config.py               loads params, sites, .env
-│   ├── data/                   M1  ingest/ (nasa_power, open_meteo, pvgis, inverter),
-│   │                               preprocess, validate (Pandera), storage (S3)
+│   ├── data/                   M1  ingest/ (open_meteo, pvgis, nasa_power, pv_model, inverter),
+│   │                               preprocess, validate (Pandera), storage (S3 API), pipeline
 │   ├── flows/                  M1  Prefect: ingestion, training, retraining, schedules
 │   ├── monitoring/             M1  Evidently drift, forecast errors, retrain trigger
 │   ├── features/               M2  windows, splits, calendar features
@@ -44,26 +44,35 @@ NASA POWER / Open-Meteo / PVGIS / inverter CSV
 ├── .github/workflows/          M3  ci.yml (tests), cd.yml (ECR/EC2)
 ├── notebooks/                  exploration only — nothing in production imports these
 ├── reports/                    monitoring output (local; synced to S3)
-└── docs/                       data_contract.md, data_workflow.md
+├── docs/                       data_contract.md, data_workflow.md
+└── planning/                   team plans and runbooks (e.g. aws_migration.md)
 ```
+
+> **Storage + tracking:** data is on DagsHub's S3-compatible storage and experiments on
+> DagsHub's hosted MLflow for now. Both move to AWS later by config only. See [docs/data_workflow.md](docs/data_workflow.md) and
+> [planning/aws_migration.md](planning/aws_migration.md).
 
 ## Setup
 
-Use **Python 3.11** (PyTorch Forecasting / Prefect / Evidently are safest there).
+Use **Python 3.11** (PyTorch Forecasting / Prefect / Evidently are safest there), and install
+with **uv**. Plain pip backtracks for 10+ minutes on this dependency set.
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate            # Windows  (macOS/Linux: source .venv/bin/activate)
-pip install -e ".[dev]"            # then add your component:
-pip install -e ".[data]"           # Member 1
-pip install -e ".[train]"          # Member 2
-pip install -e ".[api,dashboard]"  # Member 3
-cp .env.example .env               # fill in AWS / MLflow settings
-dvc pull                           # once the S3 remote is configured
+py -3.11 -m venv .venv             # macOS/Linux: python3.11 -m venv .venv
+.venv\Scripts\activate             # macOS/Linux: source .venv/bin/activate
+pip install uv
+uv pip install -e ".[data,api,dev]"      # everyone; then add your component:
+uv pip install -e ".[train]"             # Member 2
+uv pip install -e ".[dashboard]"         # Member 3
+copy .env.example .env             # macOS/Linux: cp ; fill in DagsHub user + token
+dvc pull                           # once the DagsHub remote is configured
 pytest
 ```
 
-Local stack (MLflow :5000, Prefect :4200, API :8000, dashboard :8501):
+Data pipeline commands: [docs/data_workflow.md](docs/data_workflow.md).
+
+Local stack (Prefect :4200, API :8000, dashboard :8501). MLflow is the shared DagsHub server
+from `.env`; a local MLflow (:5000) runs only with `--profile offline`:
 ```bash
 docker compose up --build
 ```

@@ -1,10 +1,18 @@
-# Local development stack:  docker compose up --build
+# Local development stack.
+#   docker compose up --build                        API + dashboard + Prefect (MLflow = DagsHub, from .env)
+#   docker compose --profile pipeline up --build     ... plus the Prefect pipeline worker
+#   docker compose --profile offline up mlflow       local MLflow only, for working without internet
+#
+# MLflow is NOT run locally by default: the team shares DagsHub's hosted MLflow
+# (MLFLOW_TRACKING_URI etc. in .env). Offline mode: set MLFLOW_TRACKING_URI=http://localhost:5000
+# for scripts on your laptop, or http://mlflow:5000 for containers in this file.
 services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow/mlflow.db --default-artifact-root /mlflow/artifacts
     ports: ["5000:5000"]
     volumes: ["mlflow_data:/mlflow"]
+    profiles: ["offline"]
 
   prefect:
     image: prefecthq/prefect:3-latest
@@ -14,10 +22,7 @@ services:
   api:
     build: { context: ., dockerfile: docker/api.Dockerfile }
     env_file: .env
-    environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
     ports: ["8000:8000"]
-    depends_on: [mlflow]
 
   dashboard:
     build: { context: ., dockerfile: docker/dashboard.Dockerfile }
@@ -32,10 +37,9 @@ services:
     build: { context: ., dockerfile: docker/pipeline.Dockerfile }
     env_file: .env
     environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
       PREFECT_API_URL: http://prefect:4200/api
     volumes: ["./data:/app/data", "./reports:/app/reports"]
-    depends_on: [mlflow, prefect]
+    depends_on: [prefect]
     profiles: ["pipeline"]
 
 volumes:

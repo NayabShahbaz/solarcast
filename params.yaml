@@ -1,15 +1,32 @@
 # Single source of truth for pipeline parameters (read by src/solarcast/config.py).
 data:
-  start_date: "2023-01-01"
-  end_date: "2025-12-31"
-  timezone: "Asia/Karachi"     # local time for calendar features; data stored in UTC
+  # PVGIS hourly simulation only covers 2005-2023, so the simulated training set is 2020-2023.
+  start_date: "2020-01-01"
+  end_date: "2023-12-31"
+  timezone: "Asia/Karachi"       # local time for calendar features; data stored in UTC
   freq: "1h"
+  feature_weather_source: "open_meteo"   # same source as the next-day forecast -> no train/serve skew
+  crosscheck_weather_source: "nasa_power"
   max_gap_hours_interpolate: 3   # gaps <= this are interpolated; longer gaps are dropped/flagged
   night_ghi_threshold_wm2: 5     # below this, generation is forced to 0
+  generation_capacity_margin: 1.1  # generation_kwh must be <= capacity * margin
+
+sources:
+  pvgis_url: "https://re.jrc.ec.europa.eu/api/v5_3/seriescalc"
+  open_meteo_archive_url: "https://archive-api.open-meteo.com/v1/archive"
+  open_meteo_forecast_url: "https://api.open-meteo.com/v1/forecast"
+  nasa_power_url: "https://power.larc.nasa.gov/api/temporal/hourly/point"
+  request_timeout_s: 120
+
+# Recent "actuals" for simulated sites (PVGIS stops at 2023): a simple PV model on Open-Meteo's
+# observed tilted irradiance, scaled to match PVGIS over the training period. is_simulated=True.
+pv_model:
+  temp_coeff_per_c: -0.004       # crystalline silicon power temperature coefficient
+  noct_c: 45                     # nominal operating cell temperature
 
 split:                           # chronological, no shuffling
-  train_end: "2025-06-30"
-  val_end: "2025-09-30"
+  train_end: "2022-12-31"        # train: 2020-2022
+  val_end: "2023-06-30"          # val: 2023 H1, test: 2023 H2
 
 window:
   history_hours: 168             # 7 days
@@ -29,5 +46,9 @@ promotion:
   max_relative_degradation: 0.0  # candidate must be <= current production MAE
 
 monitoring:
-  drift_share_threshold: 0.5     # retrain if share of drifted columns exceeds this
+  reference_window_days: 365     # reference = last N days of the training data
+  current_window_days: 14        # current = most recent N days of ingested inputs
+  drift_share_threshold: 0.5     # retrain if share of drifted columns exceeds this...
+  drift_consecutive_runs: 3      # ...for this many consecutive daily runs (one odd week != retrain)
+  retrain_cooldown_days: 7       # no automatic retrain within N days of the last one
   mae_threshold_kwh: null        # set after first production model is evaluated

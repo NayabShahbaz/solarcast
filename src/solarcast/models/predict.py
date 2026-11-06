@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def load_model(model_uri: str):
-    """Load TFT checkpoint + saved preprocessing (e.g. models:/solarcast-tft/Production)."""
+    """Load TFT checkpoint + saved preprocessing (e.g. models:/solarcast-tft@production)."""
     raise NotImplementedError
 
 

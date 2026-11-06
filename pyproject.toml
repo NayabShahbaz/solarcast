@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Day-ahead hourly rooftop solar forecasting for Lahore - MLOps pipeline on AWS"
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "pandas>=2.0",
+    "pandas>=2.2,<3",  # pandas 3 not yet supported by pytorch-forecasting (Member 2)
     "numpy>=1.24",
     "pyyaml>=6.0",
     "python-dotenv>=1.0",
@@ -34,14 +34,14 @@ train = [
     "lightning>=2.1",
     "pytorch-forecasting>=1.0",
     "chronos-forecasting>=1.2",
-    "mlflow>=2.9",
+    "mlflow>=2.9,<4",  # DagsHub hosted MLflow supports 3.x; recheck before allowing 4.x
 ]
 # Member 3 - API & dashboard
 api = [
     "fastapi>=0.110",
     "uvicorn[standard]>=0.27",
     "pydantic>=2.5",
-    "mlflow>=2.9",
+    "mlflow>=2.9,<4",  # DagsHub hosted MLflow supports 3.x; recheck before allowing 4.x
 ]
 dashboard = [
     "streamlit>=1.30",

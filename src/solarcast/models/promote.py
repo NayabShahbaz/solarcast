@@ -1,6 +1,7 @@
-"""[Member 2 + 3] Promotion gate: candidate TFT vs current Production (params.promotion).
+"""[Member 2 + 3] Promotion gate: candidate TFT vs the version with alias @production.
 
-Promote only if the candidate meets the threshold; previous version stays available for rollback.
+Promote only if the candidate meets params.promotion. On promotion, move @production to the
+candidate and @previous to the old version, so rollback is just re-pointing the alias.
 """
 
 

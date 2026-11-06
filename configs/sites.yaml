@@ -1,4 +1,5 @@
 # Sites used for training / inference. site_id is a model input (static categorical).
+# azimuth_deg is a compass bearing: 180 = facing south (converted per API in the ingest code).
 sites:
   - site_id: "lahore_pvgis_01"
     source: "pvgis"              # simulated
@@ -8,6 +9,7 @@ sites:
     panel_capacity_kw: 10.0
     tilt_deg: 20
     azimuth_deg: 180
+    system_loss_pct: 14          # PVGIS default (cables, inverter, soiling)
   # - site_id: "lahore_home_01"
   #   source: "inverter"         # real (Huawei FusionSolar / Growatt export)
   #   is_simulated: false
@@ -15,3 +17,5 @@ sites:
   #   latitude: ...
   #   longitude: ...
   #   panel_capacity_kw: ...
+  #   tilt_deg: ...
+  #   azimuth_deg: ...
