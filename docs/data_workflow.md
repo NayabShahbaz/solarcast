@@ -30,6 +30,20 @@ pytest
 Everything remote lives in **one DagsHub repo**,
 [NayabShahbaz/solarcast](https://dagshub.com/NayabShahbaz/solarcast), connected to the GitHub repo.
 
+### Looking at the data
+
+The files are parquet (binary), so open them with the peek script rather than a text editor:
+
+```bash
+python scripts/peek_data.py                         # every data file with its row/column count
+python scripts/peek_data.py data/raw/open_meteo     # columns, types, date range, daytime sample
+python scripts/peek_data.py data/raw --csv          # export to data/interim/preview/*.csv (git-ignored, opens in Excel)
+```
+
+Raw files are stored *after* parsing: the API JSON is already turned into our column names
+(`schemas.py`) with UTC start-of-hour timestamps, but no cleaning has been applied yet.
+On the web, DagsHub shows the DVC-tracked `data/` folder in the repo's file browser.
+
 ## 3. Get the exact dataset someone else used
 
 ```bash
