@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Secrets / local config
+.env
+*.pem
+.aws/
+
+# Data & artifacts (tracked by DVC / stored in S3 + MLflow, not git)
+data/**
+!data/**/
+!data/**/.gitkeep
+!data/**/*.dvc
+models/*
+!models/.gitkeep
+mlruns/
+mlartifacts/
+lightning_logs/
+reports/monitoring/*
+!reports/monitoring/.gitkeep
+
+# Prefect local state
+.prefect/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

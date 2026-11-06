@@ -1,0 +1,12 @@
+.git
+.venv
+venv
+data
+mlruns
+mlartifacts
+lightning_logs
+notebooks
+reports
+.env
+**/__pycache__
+**/.pytest_cache

@@ -1,0 +1,42 @@
+# Local development stack:  docker compose up --build
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow/mlflow.db --default-artifact-root /mlflow/artifacts
+    ports: ["5000:5000"]
+    volumes: ["mlflow_data:/mlflow"]
+
+  prefect:
+    image: prefecthq/prefect:3-latest
+    command: prefect server start --host 0.0.0.0
+    ports: ["4200:4200"]
+
+  api:
+    build: { context: ., dockerfile: docker/api.Dockerfile }
+    env_file: .env
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    ports: ["8000:8000"]
+    depends_on: [mlflow]
+
+  dashboard:
+    build: { context: ., dockerfile: docker/dashboard.Dockerfile }
+    env_file: .env
+    environment:
+      API_URL: http://api:8000
+    ports: ["8501:8501"]
+    volumes: ["./reports:/app/reports:ro"]
+    depends_on: [api]
+
+  pipeline:
+    build: { context: ., dockerfile: docker/pipeline.Dockerfile }
+    env_file: .env
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      PREFECT_API_URL: http://prefect:4200/api
+    volumes: ["./data:/app/data", "./reports:/app/reports"]
+    depends_on: [mlflow, prefect]
+    profiles: ["pipeline"]
+
+volumes:
+  mlflow_data:

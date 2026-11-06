@@ -1,0 +1,17 @@
+# Sites used for training / inference. site_id is a model input (static categorical).
+sites:
+  - site_id: "lahore_pvgis_01"
+    source: "pvgis"              # simulated
+    is_simulated: true
+    latitude: 31.5204
+    longitude: 74.3587
+    panel_capacity_kw: 10.0
+    tilt_deg: 20
+    azimuth_deg: 180
+  # - site_id: "lahore_home_01"
+  #   source: "inverter"         # real (Huawei FusionSolar / Growatt export)
+  #   is_simulated: false
+  #   vendor: "huawei"
+  #   latitude: ...
+  #   longitude: ...
+  #   panel_capacity_kw: ...

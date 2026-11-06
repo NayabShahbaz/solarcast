@@ -1,0 +1,23 @@
+# [Member 3] CD: evaluation gate -> build CPU image -> push to ECR -> deploy to EC2.
+# Disabled until AWS is set up: add repo secrets AWS_ROLE_ARN / AWS_REGION / ECR_REPOSITORY / EC2_HOST.
+name: CD
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      # TODO: evaluation gate (python -m solarcast.models.promote ...) before building
+      # - uses: aws-actions/configure-aws-credentials@v4
+      # - uses: aws-actions/amazon-ecr-login@v2
+      # - run: docker build -f docker/api.Dockerfile -t $ECR_URI:${{ github.sha }} . && docker push ...
+      # - run: ssh to EC2 and run scripts/deploy_ec2.sh ${{ github.sha }}
+      - run: echo "CD not configured yet"

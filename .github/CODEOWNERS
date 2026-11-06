@@ -1,0 +1,14 @@
+# Replace the placeholders with real GitHub usernames (prefix each with the at-sign),
+# then uncomment. Owners are auto-requested as reviewers on PRs touching their area.
+#
+# /src/solarcast/data/        <member1-github>
+# /src/solarcast/flows/       <member1-github>
+# /src/solarcast/monitoring/  <member1-github>
+# /src/solarcast/features/    <member2-github>
+# /src/solarcast/models/      <member2-github>
+# /src/solarcast/api/         <member3-github>
+# /src/solarcast/dashboard/   <member3-github>
+# /docker/                    <member3-github>
+# /infra/                     <member3-github>
+# /.github/                   <member3-github>
+# /src/solarcast/schemas.py   <member1-github> <member2-github> <member3-github>
