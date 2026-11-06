@@ -62,7 +62,8 @@ def run_validation() -> int:
         report["failed_checks"] = len(report["failures"])
 
     VALIDATION_REPORT.parent.mkdir(parents=True, exist_ok=True)
-    VALIDATION_REPORT.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    VALIDATION_REPORT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8",
+                                 newline="\n")  # LF: same bytes, same DVC hash on every OS
     if not report["valid"]:
         log.error("validation FAILED (%d checks):\n%s", report["failed_checks"],
                   "\n".join(report["failures"]))

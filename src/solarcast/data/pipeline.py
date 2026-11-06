@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -103,7 +102,6 @@ def build_processed(raw: dict[str, dict[str, Path]]) -> tuple[pd.DataFrame, dict
 
     df = pd.concat(frames, ignore_index=True)
     meta = {
-        "built_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "summary": preprocess.summarise(df),
         "pv_model_k": k_by_site,
         "data_params": params()["data"],
@@ -134,7 +132,9 @@ def crosscheck_report(raw: dict[str, dict[str, Path]]) -> dict:
 
 def save_processed(df: pd.DataFrame, meta: dict) -> Path:
     _save(df, PROCESSED_FILE)
-    METADATA_FILE.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    # No build timestamp and LF line endings: the same data must give the same DVC hash on
+    # every machine, otherwise each rebuild would look like a new dataset version.
+    METADATA_FILE.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8", newline="\n")
     # Not uploaded to the bucket: the processed dataset is a DVC stage output (dvc repro + push).
     return PROCESSED_FILE
 
