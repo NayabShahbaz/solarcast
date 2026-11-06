@@ -17,6 +17,10 @@ simulation is used, not random numbers.
 | Features | **Open-Meteo** (archive + forecast API) | GHI, tilted irradiance (GTI), temperature, cloud cover, humidity, wind | The same provider serves history *and* the next-day forecast, so training and prediction inputs match |
 | Cross-check | **NASA POWER** | GHI, temperature, humidity, wind | An independent satellite source, used only to sanity-check Open-Meteo |
 
+All training data comes from one reference system (10 kW, 20° tilt, south-facing). The model
+predicts output **per kW**, and the API multiplies by each user's system size. This works for any
+system size, but assumes a roughly south-facing roof. Other orientations are a stated limitation.
+
 The training dataset covers 2020-01-01 to 2023-12-31 (PVGIS only provides years up to 2023).
 The split is set in `params.yaml`: train 2020–2022, validation 2023 H1, test 2023 H2.
 
@@ -66,6 +70,21 @@ tracks this file as a metric. If any check fails, the stage exits non-zero and `
 before training. A unit test (`tests/data/test_stages.py`) puts a bad value into the data on
 purpose and confirms that the pipeline stops. Current result: **0 failed checks, 0 imputed
 rows**.
+
+### Real rooftop data (test set)
+
+To check the model on a real roof, we added Member 1's home system: a SolarMax 3.8 kW hybrid
+inverter with no grid feed-in. Its monitoring portal exports were cleaned into **509 days** of
+daily totals (Jun 2025 to Nov 2026) and **2,446 hours** of hourly data, of which **2,229 hours
+are usable** for testing. Several checks went into this:
+
+- The portal's hourly figures turned out to be in **China time (UTC+8)** and about **9 % low**.
+  We found both by comparing them with the 5-minute readings, and corrected them.
+- **17 outage days** (system or Wi-Fi offline) are flagged and left out.
+- Because the battery can fill up with nowhere to send power, **held-back hours** (battery
+  full, inverter limiting solar) are detected from the 5-minute data and excluded.
+- The raw exports contain the device serial number and account name, so only the cleaned data
+  is versioned. The raw files never leave the owner's machine.
 
 ## 4. Reproducible pipeline (DVC + DagsHub)
 

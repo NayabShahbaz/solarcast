@@ -15,6 +15,8 @@ RAW_DIR = DATA_DIR / "raw"
 INTERIM_DIR = DATA_DIR / "interim"
 PROCESSED_DIR = DATA_DIR / "processed"
 REFERENCE_DIR = DATA_DIR / "reference"
+INVERTER_DIR = DATA_DIR / "inverter"  # raw real-site exports: owner's machine only, never pushed
+REAL_DIR = DATA_DIR / "real"  # cleaned real-site data, identifiers removed (versioned: dvc add)
 REPORTS_DIR = ROOT / "reports"
 MODELS_DIR = ROOT / "models"
 

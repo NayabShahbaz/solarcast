@@ -56,6 +56,22 @@ def fetch_history(site: dict, start: str, end: str) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+def fetch_ghi_history(latitude: float, longitude: float, start: str, end: str) -> pd.Series:
+    """Hourly GHI (W/m^2) only, start-of-hour UTC. Needs no tilt, so it works for a site whose
+    panel angle isn't known yet (used to judge outage days at the real site)."""
+    url = params()["sources"]["open_meteo_archive_url"]
+    parts = []
+    for chunk_start, chunk_end in _year_chunks(start, end):
+        q = {"latitude": latitude, "longitude": longitude, "hourly": "shortwave_radiation",
+             "timezone": "GMT", "start_date": chunk_start, "end_date": chunk_end}
+        hourly = get_json("open-meteo-archive", url, q).get("hourly") or {}
+        if not hourly.get("time"):
+            raise SourceError("open-meteo-archive: response has no hourly data")
+        ts = pd.to_datetime(hourly["time"], utc=True) - pd.Timedelta(hours=1)
+        parts.append(pd.Series(hourly["shortwave_radiation"], index=ts, name=S.GHI, dtype=float))
+    return pd.concat(parts)
+
+
 def fetch_forecast(site: dict, past_days: int = 0, forecast_days: int = 2) -> pd.DataFrame:
     """Hourly forecast (optionally with recent past days). Use next_day_window() to cut 24h."""
     url = params()["sources"]["open_meteo_forecast_url"]
