@@ -91,6 +91,23 @@ Each flow starts a temporary local Prefect server if `PREFECT_API_URL` is not se
 in the UI, run `prefect server start`, open http://127.0.0.1:4200 and set
 `PREFECT_API_URL=http://127.0.0.1:4200/api` in `.env`.
 
+### Real rooftop data (Member 1's machine only)
+
+Raw portal exports go in `data/inverter/home_01/` exactly as downloaded (git-ignored, never
+pushed: they contain the serial number and user name). Any mix of Device MonthlyReport,
+Owner MonthlyReport and Device DailyReport files works, and overlaps are removed.
+
+```bash
+python -m solarcast.data.real          # -> data/real/lahore_home_01/{hourly,daily}.parquet + summary.json
+dvc add data/real                      # version the cleaned data (no identifiers)
+dvc push
+git add data/real.dvc && git commit -m "data: real site, exports up to <date>"
+```
+
+It's a separate command, not a `dvc.yaml` stage: teammates don't have the raw exports, so a
+stage would break their `dvc repro`. They get the cleaned files with `dvc pull`. Rules and
+evidence: [data_contract.md](data_contract.md#real-site-lahore_home_01-test-data-only).
+
 ## 5. After rebuilding the dataset: version it
 
 ```bash

@@ -10,12 +10,25 @@ sites:
     tilt_deg: 20
     azimuth_deg: 180
     system_loss_pct: 14          # PVGIS default (cables, inverter, soiling)
-  # - site_id: "lahore_home_01"
-  #   source: "inverter"         # real (Huawei FusionSolar / Growatt export)
-  #   is_simulated: false
-  #   vendor: "huawei"
-  #   latitude: ...
-  #   longitude: ...
-  #   panel_capacity_kw: ...
-  #   tilt_deg: ...
-  #   azimuth_deg: ...
+
+  # Real rooftop (Member 1's home). TEST data only - never used for training.
+  # Cleaned by `python -m solarcast.data.real` (owner's machine; raw exports aren't shared).
+  - site_id: "lahore_home_01"
+    source: "inverter"
+    is_simulated: false
+    vendor: "solarmax_solar_of_things"   # SolarMax 3.5KW 24V hybrid, "Solar of Things" portal
+    latitude: 31.44              # portal location, rounded to 2 decimals (~1 km) for privacy
+    longitude: 74.29
+    installed: "2025-06-16"      # portal "Installed Date"; earlier days are dropped
+    inverter_kw: 3.5             # export "Machine Model" 3.5KW 24V (unchanged since install)
+    grid_feed_in: false          # export "On Grid Enable Status: Disable" -> solar can be held back
+    azimuth_deg: 180             # from the data: production centred at 11:52 vs solar noon 11:48
+    tilt_deg: null               # TODO(owner): measure with a level app
+    # TODO(owner): panel kW from panel count x Pmax. The data shows an expansion around
+    # 2025-08-10/11 (daily kWh jumps from <=20 to ~30). Fill in, e.g.:
+    #   capacity_history:
+    #     - {from: "2025-06-16", panel_capacity_kw: ...}
+    #     - {from: "2025-08-11", panel_capacity_kw: ...}
+    capacity_history: null
+    export_folder: "home_01"     # data/inverter/home_01/ (git-ignored, never pushed)
+    export_hour_timezone: "Asia/Shanghai"   # portal's hourly columns are UTC+8 (checked)

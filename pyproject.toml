@@ -25,6 +25,7 @@ data = [
     "prefect>=2.14",
     "evidently>=0.4",
     "pyarrow>=14.0",
+    "openpyxl>=3.1",  # reads the real inverter Excel exports
 ]
 # Member 2 - models & experiment tracking
 train = [
