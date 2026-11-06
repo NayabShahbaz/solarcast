@@ -65,12 +65,33 @@ pip install uv
 uv pip install -e ".[data,api,dev]"      # everyone; then add your component:
 uv pip install -e ".[train]"             # Member 2
 uv pip install -e ".[dashboard]"         # Member 3
-copy .env.example .env             # macOS/Linux: cp ; fill in DagsHub user + token
-dvc pull                           # once the DagsHub remote is configured
+copy .env.example .env             # macOS/Linux: cp ; set DAGSHUB_USER + DAGSHUB_TOKEN
+python scripts/configure_dvc_remote.py   # DagsHub DVC credentials (token stays local)
+dvc pull                           # versioned data from DagsHub
 pytest
 ```
 
-Data pipeline commands: [docs/data_workflow.md](docs/data_workflow.md).
+## Reproduce the pipeline
+
+The batch pipeline is defined in [`dvc.yaml`](dvc.yaml) as named stages:
+
+```
+ingest -> preprocess -> validate -> train_baseline, train_tft -> evaluate
+```
+
+```bash
+dvc repro            # run every stage whose code, params or inputs changed
+dvc repro --force    # rebuild the full pipeline from scratch (re-downloads source data)
+dvc dag              # show the stage graph
+dvc metrics show     # validation and evaluation metrics
+dvc push             # share outputs via DagsHub, then commit dvc.lock
+```
+
+`validate` exits non-zero on any failed data check, so no model is trained on bad data.
+All parameters live in [`params.yaml`](params.yaml). Experiments are tracked on
+[DagsHub MLflow](https://dagshub.com/NayabShahbaz/solarcast.mlflow).
+Data details: [docs/data_workflow.md](docs/data_workflow.md) and
+[docs/data_contract.md](docs/data_contract.md).
 
 Local stack (Prefect :4200, API :8000, dashboard :8501). MLflow is the shared DagsHub server
 from `.env`; a local MLflow (:5000) runs only with `--profile offline`:
@@ -79,7 +100,8 @@ docker compose up --build
 ```
 
 ## Team workflow
-- `main` is protected: no direct pushes, PR + 1 review + green CI.
-- Branch names: `m1/ingestion-flow`, `m2/tft-baseline`, `m3/fastapi-skeleton`.
+- `main` is protected: no direct pushes. Changes go through a PR with green CI (`test`).
+- Each member works on their own branch and opens PRs into `main`: `nayab-space` (Member 1);
+  Members 2 and 3 pick theirs.
 - Changes to `schemas.py`, `models/predict.py` or `api/schemas.py` need review from every affected member.
 - Never commit data, model files or `.env` — data goes through DVC (DagsHub), models through MLflow (DagsHub).

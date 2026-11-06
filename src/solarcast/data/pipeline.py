@@ -74,8 +74,23 @@ def ingest_history(site: dict, start: str | None = None, end: str | None = None,
     return paths
 
 
+def raw_paths(site: dict, start: str | None = None, end: str | None = None) -> dict[str, Path]:
+    """Paths ingest_history() writes for a site, for the sources that exist on disk."""
+    p = params()["data"]
+    tag = f"{site['site_id']}_{start or p['start_date']}_{end or p['end_date']}"
+    paths = {src: RAW_DIR / src / f"{tag}.parquet" for src in ("pvgis", "open_meteo", "nasa_power")}
+    missing = [s for s in ("pvgis", "open_meteo") if not paths[s].exists()]
+    if missing:
+        raise FileNotFoundError(f"raw data missing for {site['site_id']}: {missing} - run ingest")
+    return {k: v for k, v in paths.items() if v.exists()}
+
+
 def build_processed(raw: dict[str, dict[str, Path]]) -> tuple[pd.DataFrame, dict]:
-    """raw = {site_id: paths from ingest_history}. Returns (validated dataset, metadata)."""
+    """raw = {site_id: paths from ingest_history}. Returns (dataset, metadata).
+
+    Not validated here: validation is its own DVC stage (solarcast.data.stages validate), so a
+    bad dataset stops `dvc repro` before any training stage runs.
+    """
     frames, k_by_site = [], {}
     for site in simulated_sites():
         paths = raw[site["site_id"]]
@@ -87,7 +102,6 @@ def build_processed(raw: dict[str, dict[str, Path]]) -> tuple[pd.DataFrame, dict
         )
 
     df = pd.concat(frames, ignore_index=True)
-    df = validate.validate_processed(df)
     meta = {
         "built_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "summary": preprocess.summarise(df),
@@ -121,7 +135,7 @@ def crosscheck_report(raw: dict[str, dict[str, Path]]) -> dict:
 def save_processed(df: pd.DataFrame, meta: dict) -> Path:
     _save(df, PROCESSED_FILE)
     METADATA_FILE.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    # Not uploaded to the bucket: the processed dataset is versioned with DVC (dvc add + push).
+    # Not uploaded to the bucket: the processed dataset is a DVC stage output (dvc repro + push).
     return PROCESSED_FILE
 
 

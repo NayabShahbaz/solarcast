@@ -1,0 +1,16 @@
+root = true
+
+# LF everywhere: DVC hashes exact bytes, so CRLF on Windows would make
+# dvc.yaml dependencies look "modified" on other machines.
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+
+[*.py]
+indent_style = space
+indent_size = 4
+
+[*.{yaml,yml,json,toml}]
+indent_style = space
+indent_size = 2

@@ -1,75 +1,65 @@
-"""[Member 1 + 2] Runs Member 2's training and evaluation entry points under Prefect.
+"""[Member 1 + 2] Runs the training part of dvc.yaml under Prefect.
 
-Contract with Member 2 (src/solarcast/models):
-  train(model="tft", dataset_version=<git commit of hourly.parquet.dvc>) -> mlflow run_id
-  evaluate(run_id) -> {"mae_kwh": float, "rmse_kwh": float, ...}
+  dvc repro evaluate      -> (data stages if needed) -> train_baseline, train_tft -> evaluate
+  force=True (retraining) -> retrain both models even if their inputs didn't change
 
-Run locally: python -m solarcast.flows.training_flow
+Contract with Member 2 (see src/solarcast/models/train.py and evaluate.py):
+  models/<model>/run.json  {"run_id", "model", "dataset_version"}
+  reports/eval.json        {"<model>": {"mae_kwh", "rmse_kwh"}, "best": ...}
+
+Run locally: python -m solarcast.flows.training_flow [--force]
 """
 
 from __future__ import annotations
 
-import subprocess
+import argparse
+import json
 
 from prefect import flow, get_run_logger, task
 
-from solarcast.config import ROOT
-from solarcast.data.pipeline import PROCESSED_FILE
+from solarcast.config import MODELS_DIR, REPORTS_DIR
+from solarcast.flows import _dvc
+
+EVAL_REPORT = REPORTS_DIR / "eval.json"
+TRAIN_STAGES = ("train_baseline", "train_tft")
 
 
 class TrainingNotAvailable(RuntimeError):
-    """Member 2's entry points aren't implemented yet (expected until week 2-3)."""
+    """Member 2's entry points aren't implemented yet (expected until they land)."""
 
 
-def dataset_version() -> str | None:
-    """Git commit that last changed the DVC pointer of the processed dataset."""
-    dvc_file = PROCESSED_FILE.with_suffix(PROCESSED_FILE.suffix + ".dvc")
+def _repro(*args: str) -> str:
     try:
-        out = subprocess.run(
-            ["git", "log", "-n", "1", "--format=%H", "--", str(dvc_file.relative_to(ROOT))],
-            cwd=ROOT, capture_output=True, text=True, check=True,
-        ).stdout.strip()
-        return out or None
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return None
+        return _dvc.run("repro", *args)
+    except _dvc.DvcError as e:
+        if "NotImplementedError" in e.output:
+            raise TrainingNotAvailable(
+                "training/evaluation not implemented yet (Member 2): " + " ".join(args)
+            ) from e
+        raise
 
 
-def _member2(fn_name: str):
-    from solarcast.models import evaluate, train  # imported lazily: needs the [train] extras
-    return {"train": train.train, "evaluate": evaluate.evaluate}[fn_name]
-
-
-@task(task_run_name="train-{model}")
-def run_training(model: str, version: str | None) -> str:
-    if not PROCESSED_FILE.exists():
-        raise FileNotFoundError(f"{PROCESSED_FILE} missing - run ingestion (history) or dvc pull")
-    try:
-        return _member2("train")(model=model, dataset_version=version)
-    except NotImplementedError as e:
-        raise TrainingNotAvailable("models.train.train() is not implemented yet (Member 2)") from e
-
-
-@task(task_run_name="evaluate-{run_id}")
-def run_evaluation(run_id: str) -> dict:
-    try:
-        return _member2("evaluate")(run_id)
-    except NotImplementedError as e:
-        raise TrainingNotAvailable(
-            "models.evaluate.evaluate() is not implemented yet (Member 2)"
-        ) from e
+@task(task_run_name="dvc-repro-training")
+def repro_training(force: bool) -> str:
+    out = ""
+    if force:  # -s: only this stage; -f: even though nothing changed
+        for stage in TRAIN_STAGES:
+            out += _repro("--force", "--single-item", stage)
+    return out + _repro("evaluate")
 
 
 @flow(name="solarcast-training", log_prints=True)
-def training_flow(model: str = "tft") -> dict:
+def training_flow(force: bool = False) -> dict:
     logger = get_run_logger()
-    version = dataset_version()
-    if version is None:
-        logger.warning("processed dataset is not DVC-committed - run will not be reproducible")
-    run_id = run_training(model, version)
-    metrics = run_evaluation(run_id)
-    logger.info("candidate %s on dataset %s: %s", run_id, version, metrics)
-    return {"run_id": run_id, "dataset_version": version, "metrics": metrics}
+    logger.info("dvc repro:\n%s", repro_training(force).strip())
+    run = json.loads((MODELS_DIR / "tft" / "run.json").read_text(encoding="utf-8"))
+    metrics = json.loads(EVAL_REPORT.read_text(encoding="utf-8"))
+    version = _dvc.dataset_version()
+    logger.info("candidate %s on dataset %s: %s", run["run_id"], version, metrics)
+    return {"run_id": run["run_id"], "dataset_version": version, "metrics": metrics}
 
 
 if __name__ == "__main__":
-    training_flow()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--force", action="store_true")
+    training_flow(force=ap.parse_args().force)
