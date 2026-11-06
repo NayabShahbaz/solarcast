@@ -1,11 +1,12 @@
-"""[Member 1] Object-storage helpers that work with DagsHub OR AWS S3, unchanged.
+"""[Member 1] DagsHub object storage for daily data and monitoring reports.
 
-Which backend is used depends only on .env:
-- DagsHub (now):  S3_ENDPOINT_URL=https://dagshub.com/api/v1/repo-buckets/s3/<user>
-                  AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY = your DagsHub token
-- AWS (later):    S3_ENDPOINT_URL empty, credentials from AWS_PROFILE or the EC2 instance role
+Every DagsHub repo has a bucket named after the repo. It speaks the S3 protocol, so boto3 is the
+client, but nothing here is AWS: the endpoint is DagsHub's and the credentials are your DagsHub
+token (used as both access key and secret).
 
-See planning/aws_migration.md for the switch.
+Settings come from .env: DAGSHUB_REPO_OWNER, DAGSHUB_REPO, DAGSHUB_TOKEN.
+Key prefixes (daily/, monitoring/) come from params.yaml -> storage. Versioned datasets
+(data/raw, data/processed) are NOT stored here: DVC pushes those to the same DagsHub repo.
 """
 
 from __future__ import annotations
@@ -16,37 +17,52 @@ from pathlib import Path
 
 import boto3
 
-from solarcast.config import env
+from solarcast.config import env, params
 
 log = logging.getLogger(__name__)
+
+ENDPOINT = "https://dagshub.com/api/v1/repo-buckets/s3/{owner}"
+
+
+def _settings() -> dict[str, str]:
+    return {
+        "owner": env("DAGSHUB_REPO_OWNER") or "",
+        "repo": env("DAGSHUB_REPO") or "",
+        "token": env("DAGSHUB_TOKEN") or "",
+    }
+
+
+def is_configured() -> bool:
+    """True once .env has real DagsHub values (not missing and not <placeholders>)."""
+    return all(v and "<" not in v for v in _settings().values())
 
 
 @lru_cache
 def client():
-    """boto3 S3 client. Credentials come from the standard AWS env vars / profile / role."""
-    session = boto3.session.Session(profile_name=env("AWS_PROFILE") or None)
-    return session.client(
+    s = _settings()
+    if not is_configured():
+        raise RuntimeError("DagsHub storage not configured - set DAGSHUB_* values in .env")
+    return boto3.client(
         "s3",
-        endpoint_url=env("S3_ENDPOINT_URL") or None,  # None -> real AWS S3
-        region_name=env("AWS_REGION") or "us-east-1",
+        endpoint_url=ENDPOINT.format(owner=s["owner"]),
+        aws_access_key_id=s["token"],  # boto3's parameter names; values are the DagsHub token
+        aws_secret_access_key=s["token"],
+        region_name="us-east-1",  # required by boto3, ignored by DagsHub
     )
 
 
 def bucket() -> str:
-    name = env("S3_BUCKET")
-    if not name:
-        raise RuntimeError("S3_BUCKET is not set - copy .env.example to .env and fill it in")
-    return name
+    return _settings()["repo"]
 
 
-def key(prefix_var: str, name: str) -> str:
-    """Build a key from a prefix env var, e.g. key("S3_RAW_PREFIX", "pvgis/2024.csv")."""
-    return f"{env(prefix_var, '')}{name}"
+def key(area: str, name: str) -> str:
+    """Object key in one of the areas from params.yaml, e.g. key("daily", "recent/site.parquet")."""
+    return f"{params()['storage'][area]}{name}"
 
 
 def upload(local_path: Path, object_key: str) -> str:
     client().upload_file(str(local_path), bucket(), object_key)
-    return f"s3://{bucket()}/{object_key}"
+    return f"dagshub://{_settings()['owner']}/{bucket()}/{object_key}"
 
 
 def download(object_key: str, local_path: Path) -> Path:
@@ -56,15 +72,8 @@ def download(object_key: str, local_path: Path) -> Path:
     return local_path
 
 
-def is_configured() -> bool:
-    """True once .env has a real bucket (not missing and not a <placeholder>)."""
-    name = env("S3_BUCKET") or ""
-    endpoint = env("S3_ENDPOINT_URL") or ""
-    return bool(name) and "<" not in name and "<" not in endpoint
-
-
 def maybe_upload(local_path: Path, object_key: str) -> str | None:
-    """Upload if storage is configured; otherwise log and continue (local-only mode)."""
+    """Upload if DagsHub is configured; otherwise log and continue (local-only mode)."""
     if not is_configured():
         log.info("storage not configured - kept %s local only", local_path)
         return None

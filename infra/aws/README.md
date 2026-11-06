@@ -2,7 +2,7 @@
 
 | Resource   | Purpose                                                     | Name (fill in)        |
 |------------|-------------------------------------------------------------|-----------------------|
-| S3         | raw/ processed/ monitoring/ prefixes + DVC remote (dvc/)    | `solarcast-data`      |
+| (S3)       | not needed: data, DVC and MLflow live on DagsHub            | —                     |
 | ECR        | API / dashboard / pipeline images                           | `solarcast-api`       |
 | EC2        | runs API (+ dashboard) containers                           |                       |
 | CloudWatch | app logs, request errors, inference latency                 | `/solarcast/api`      |

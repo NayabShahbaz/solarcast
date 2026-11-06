@@ -22,11 +22,12 @@ pytest
 |---|---|---|
 | Historical API pulls (PVGIS, Open-Meteo, NASA POWER) | `data/raw/<source>/` | **DVC** (`data/raw.dvc`) |
 | Training dataset + `metadata.json` | `data/processed/` | **DVC** (`data/processed.dvc`) |
-| Daily state: recent actuals, forecast inputs, daily pulls | `data/interim/` | object storage (S3 API) |
-| Monitoring output for the dashboard | `reports/monitoring/` | object storage (S3 API) |
+| Daily state: recent actuals, forecast inputs, daily pulls | `data/interim/` | DagsHub bucket `daily/` |
+| Monitoring output for the dashboard | `reports/monitoring/` | DagsHub bucket `monitoring/` |
+| Experiments and models | — | DagsHub MLflow (Member 2) |
 
-Storage is **DagsHub** for now and **AWS S3** later. Only `.env` / `.dvc/config` change:
-[planning/aws_migration.md](../planning/aws_migration.md).
+Everything remote lives in **one DagsHub repo**,
+[NayabShahbaz/solarcast](https://dagshub.com/NayabShahbaz/solarcast), connected to the GitHub repo.
 
 ## 3. Get the exact dataset someone else used
 
@@ -97,27 +98,28 @@ and still completes.
 Prefect keeps every run's logs. With a Prefect server running, open the flow run in the UI.
 Without one, the console output is the log.
 
-## 8. DagsHub setup (one time, Member 1 — pending)
+## 8. DagsHub access (once per member)
 
-1. Create the DagsHub repo connected to the GitHub repo, then create a token
-   (User settings → Tokens). Put the user name and token in `.env`.
-2. Copy the exact commands from the DagsHub repo page → **Remote → DVC → S3 (boto)**. They look like:
+1. **Repo owner (Member 1):** add the member on DagsHub: repo → **Settings → Collaborators**
+   (write access, so they can `dvc push` and log MLflow runs).
+2. **The member:** create a DagsHub account (sign in with GitHub), then go to
+   **User settings → Tokens** and create a token.
+3. In `.env`, set `DAGSHUB_USER` and `DAGSHUB_TOKEN` to **your own** values. Keep
+   `DAGSHUB_REPO_OWNER=NayabShahbaz` and `DAGSHUB_REPO=solarcast`.
+4. Run:
    ```bash
-   dvc remote add -d origin s3://dvc
-   dvc remote modify origin endpointurl https://dagshub.com/<dagshub-user>/solarcast.s3
-   dvc remote modify --local origin access_key_id <dagshub-token>
-   dvc remote modify --local origin secret_access_key <dagshub-token>
-   git add .dvc/config && git commit -m "Configure DVC remote (DagsHub)"
-   dvc push
+   python scripts/configure_dvc_remote.py   # writes your token to .dvc/config.local (git-ignored)
+   dvc pull
    ```
-   `--local` keeps the token in `.dvc/config.local`, which git ignores.
+
+The DVC remote uses DagsHub's S3-compatible endpoint (`s3://dvc` at
+`https://dagshub.com/NayabShahbaz/solarcast.s3`). That's only the protocol: no AWS account is involved.
 
 ## 9. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
 | `pip install` runs for ages | Use `uv pip install` (step 1) |
-| `dvc pull` → 403 / AccessDenied | Token missing from `.dvc/config.local`, or no access to the DagsHub repo |
-| `storage not configured - kept … local only` | Expected until `.env` has real DagsHub values |
-| `NoCredentialsError` from storage | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` missing in `.env` |
-| Uploads go to real AWS by mistake | `S3_ENDPOINT_URL` is empty in `.env` |
+| `dvc pull`/`push` → 403 / AccessDenied | Rerun `scripts/configure_dvc_remote.py`. If it persists, you're not a collaborator on the DagsHub repo yet |
+| `storage not configured - kept … local only` | `.env` still has `<placeholders>` in the `DAGSHUB_*` lines |
+| Token leaked or expired | Create a new token on DagsHub, update `DAGSHUB_TOKEN` in `.env`, rerun the configure script |

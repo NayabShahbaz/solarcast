@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "solarcast"
 version = "0.1.0"
-description = "Day-ahead hourly rooftop solar forecasting for Lahore - MLOps pipeline on AWS"
+description = "Day-ahead hourly rooftop solar forecasting for Lahore - MLOps pipeline (DagsHub + AWS)"
 requires-python = ">=3.10,<3.13"
 dependencies = [
     "pandas>=2.2,<3",  # pandas 3 not yet supported by pytorch-forecasting (Member 2)
@@ -21,7 +21,7 @@ dependencies = [
 data = [
     "requests>=2.31",
     "pandera>=0.18",
-    "dvc[s3]>=3.0",
+    "dvc[s3]>=3.0",  # s3 = protocol for DagsHub storage, not AWS
     "prefect>=2.14",
     "evidently>=0.4",
     "pyarrow>=14.0",

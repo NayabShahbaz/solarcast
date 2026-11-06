@@ -1,7 +1,8 @@
 # SolarCast
 
 Day-ahead **hourly** solar generation forecasts (kWh) for net-metered rooftop systems in Lahore,
-served by a reproducible, automated and monitored ML pipeline on AWS.
+served by a reproducible, automated and monitored ML pipeline: data and experiments on DagsHub,
+API on AWS.
 
 **Team (BCS-7A):** 23L-3008 · 23L-1018 · 23L-0565
 
@@ -9,7 +10,7 @@ served by a reproducible, automated and monitored ML pipeline on AWS.
 NASA POWER / Open-Meteo / PVGIS / inverter CSV
         │  Prefect (daily)            ── Member 1
         ▼
-   S3 raw ──► Pandera validate ──► preprocess ──► S3 processed (DVC)
+   raw (DVC) ──► Pandera validate ──► preprocess ──► processed (DVC on DagsHub)
         │
         ▼                              ── Member 2
    windows + features ──► baselines / Chronos-Bolt / TFT ──► MLflow registry
@@ -31,7 +32,7 @@ NASA POWER / Open-Meteo / PVGIS / inverter CSV
 │   ├── schemas.py              ★ shared data contract (all three review changes)
 │   ├── config.py               loads params, sites, .env
 │   ├── data/                   M1  ingest/ (open_meteo, pvgis, nasa_power, pv_model, inverter),
-│   │                               preprocess, validate (Pandera), storage (S3 API), pipeline
+│   │                               preprocess, validate (Pandera), storage (DagsHub), pipeline
 │   ├── flows/                  M1  Prefect: ingestion, training, retraining, schedules
 │   ├── monitoring/             M1  Evidently drift, forecast errors, retrain trigger
 │   ├── features/               M2  windows, splits, calendar features
@@ -43,14 +44,14 @@ NASA POWER / Open-Meteo / PVGIS / inverter CSV
 ├── infra/aws/  scripts/        M3  AWS notes, deploy + rollback scripts
 ├── .github/workflows/          M3  ci.yml (tests), cd.yml (ECR/EC2)
 ├── notebooks/                  exploration only — nothing in production imports these
-├── reports/                    monitoring output (local; synced to S3)
-├── docs/                       data_contract.md, data_workflow.md
-└── planning/                   team plans and runbooks (e.g. aws_migration.md)
+├── reports/                    monitoring output (local; synced to DagsHub)
+└── docs/                       data_contract.md, data_workflow.md
 ```
 
-> **Storage + tracking:** data is on DagsHub's S3-compatible storage and experiments on
-> DagsHub's hosted MLflow for now. Both move to AWS later by config only. See [docs/data_workflow.md](docs/data_workflow.md) and
-> [planning/aws_migration.md](planning/aws_migration.md).
+> **Data + experiments live on DagsHub:**
+> [NayabShahbaz/solarcast](https://dagshub.com/NayabShahbaz/solarcast) holds the DVC remote,
+> the daily/monitoring bucket and the MLflow server. AWS is used only for deploying the API
+> (ECR, EC2, CloudWatch). Setup: [docs/data_workflow.md](docs/data_workflow.md).
 
 ## Setup
 
@@ -81,4 +82,4 @@ docker compose up --build
 - `main` is protected: no direct pushes, PR + 1 review + green CI.
 - Branch names: `m1/ingestion-flow`, `m2/tft-baseline`, `m3/fastapi-skeleton`.
 - Changes to `schemas.py`, `models/predict.py` or `api/schemas.py` need review from every affected member.
-- Never commit data, model files or `.env` — data goes through DVC/S3, models through MLflow.
+- Never commit data, model files or `.env` — data goes through DVC (DagsHub), models through MLflow (DagsHub).

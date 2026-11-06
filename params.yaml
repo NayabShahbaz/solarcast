@@ -18,6 +18,11 @@ sources:
   nasa_power_url: "https://power.larc.nasa.gov/api/temporal/hourly/point"
   request_timeout_s: 120
 
+# Key prefixes in the DagsHub repo bucket (daily data + monitoring; versioned datasets use DVC)
+storage:
+  daily: "daily/"            # daily/recent, daily/forecast_inputs, daily/raw_daily
+  monitoring: "monitoring/"  # latest.json, history.jsonl, drift_<site>.html
+
 # Recent "actuals" for simulated sites (PVGIS stops at 2023): a simple PV model on Open-Meteo's
 # observed tilted irradiance, scaled to match PVGIS over the training period. is_simulated=True.
 pv_model:

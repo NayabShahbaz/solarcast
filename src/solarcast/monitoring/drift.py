@@ -76,7 +76,7 @@ def run_drift_report(reference: pd.DataFrame, current: pd.DataFrame, name: str) 
     MONITORING_DIR.mkdir(parents=True, exist_ok=True)
     html = MONITORING_DIR / f"drift_{name}.html"
     result = _evidently.data_drift(reference[DRIFT_COLUMNS], current[DRIFT_COLUMNS], html)
-    storage.maybe_upload(html, storage.key("S3_MONITORING_PREFIX", html.name))
+    storage.maybe_upload(html, storage.key("monitoring", html.name))
     return result | {"report_html": str(html.relative_to(REPORTS_DIR.parent))}
 
 

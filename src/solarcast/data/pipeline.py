@@ -1,13 +1,13 @@
 """[Member 1] Plain-Python pipeline steps. Prefect flows in solarcast.flows wrap these as tasks,
 so every step can also be run and tested without Prefect.
 
-Files produced (all DVC-tracked under data/, mirrored to object storage when configured):
-  data/raw/<source>/<site_id>_<start>_<end>.parquet     historical API pulls (DVC)
-  data/interim/raw_daily/<site_id>_<date>.parquet        daily API pulls (object storage, not DVC)
-  data/processed/hourly.parquet                          training dataset (schemas.PROCESSED_COLUMNS)
-  data/processed/metadata.json                           summary, pv_model k, build params
-  data/interim/recent/<site_id>.parquet                  rolling recent weather + actuals (daily)
-  data/interim/forecast_inputs/<site_id>_<date>.parquet  next-day weather inputs for the API
+Files produced:
+  data/raw/<source>/<site_id>_<start>_<end>.parquet     historical API pulls       -> DVC
+  data/processed/hourly.parquet                          training dataset           -> DVC
+  data/processed/metadata.json                           summary, pv_model k, params -> DVC
+  data/interim/raw_daily/<site_id>_<date>.parquet        daily API pull             -> DagsHub daily/
+  data/interim/recent/<site_id>.parquet                  rolling weather + actuals  -> DagsHub daily/
+  data/interim/forecast_inputs/<site_id>_<date>.parquet  next-day inputs for the API -> DagsHub daily/
 """
 
 from __future__ import annotations
@@ -121,8 +121,7 @@ def crosscheck_report(raw: dict[str, dict[str, Path]]) -> dict:
 def save_processed(df: pd.DataFrame, meta: dict) -> Path:
     _save(df, PROCESSED_FILE)
     METADATA_FILE.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    storage.maybe_upload(PROCESSED_FILE, storage.key("S3_PROCESSED_PREFIX", PROCESSED_FILE.name))
-    storage.maybe_upload(METADATA_FILE, storage.key("S3_PROCESSED_PREFIX", METADATA_FILE.name))
+    # Not uploaded to the bucket: the processed dataset is versioned with DVC (dvc add + push).
     return PROCESSED_FILE
 
 
@@ -147,7 +146,7 @@ def ingest_daily(site: dict, today_local: pd.Timestamp | None = None,
     today = (today_local or pd.Timestamp.now(tz=tz)).tz_convert(tz).normalize()
     raw = open_meteo.fetch_forecast(site, past_days=past_days, forecast_days=2)
     stamp = today.strftime("%Y-%m-%d")
-    _save(raw, INTERIM_DIR / "raw_daily" / f"{site['site_id']}_{stamp}.parquet")
+    raw_path = _save(raw, INTERIM_DIR / "raw_daily" / f"{site['site_id']}_{stamp}.parquet")
 
     weather = preprocess.clean_weather(raw)
     cutoff = today.tz_convert("UTC")  # hours before local midnight today are "observed"
@@ -171,6 +170,6 @@ def ingest_daily(site: dict, today_local: pd.Timestamp | None = None,
         "recent": _save(recent, recent_path),
         "forecast_inputs": _save(forecast, FORECAST_DIR / f"{site['site_id']}_{stamp}.parquet"),
     }
-    for p in paths.values():
-        storage.maybe_upload(p, storage.key("S3_RAW_PREFIX", f"{p.parent.name}/{p.name}"))
+    for p in (raw_path, *paths.values()):
+        storage.maybe_upload(p, storage.key("daily", f"{p.parent.name}/{p.name}"))
     return paths

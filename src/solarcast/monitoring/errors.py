@@ -160,7 +160,7 @@ def write_monitoring_summary(drift_summary: dict, error_summary: dict | None,
     latest.write_text(json.dumps(record, indent=2), encoding="utf-8")
     with open(MONITORING_DIR / "history.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
-    storage.maybe_upload(latest, storage.key("S3_MONITORING_PREFIX", "latest.json"))
+    storage.maybe_upload(latest, storage.key("monitoring", "latest.json"))
     storage.maybe_upload(MONITORING_DIR / "history.jsonl",
-                         storage.key("S3_MONITORING_PREFIX", "history.jsonl"))
+                         storage.key("monitoring", "history.jsonl"))
     return record
