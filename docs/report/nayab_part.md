@@ -73,7 +73,7 @@ rows**.
 
 ### Real rooftop data (test set)
 
-To check the model on a real roof, we added Member 1's home system: a SolarMax 3.5 kW hybrid
+To check the model on a real roof, we added Member 1's home system: a SolarMax 3.8 kW hybrid
 inverter with no grid feed-in. Its monitoring portal exports were cleaned into **509 days** of
 daily totals (Jun 2025 to Nov 2026) and **2,446 hours** of hourly data, of which **2,229 hours
 are usable** for testing. Several checks went into this:

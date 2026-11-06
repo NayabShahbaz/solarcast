@@ -16,11 +16,13 @@ sites:
   - site_id: "lahore_home_01"
     source: "inverter"
     is_simulated: false
-    vendor: "solarmax_solar_of_things"   # SolarMax 3.5KW 24V hybrid, "Solar of Things" portal
+    vendor: "solarmax_solar_of_things"   # SolarMax SOLON DUAL hybrid, "Solar of Things" portal
     latitude: 31.44              # portal location, rounded to 2 decimals (~1 km) for privacy
     longitude: 74.29
     installed: "2025-06-16"      # portal "Installed Date"; earlier days are dropped
-    inverter_kw: 3.5             # export "Machine Model" 3.5KW 24V (unchanged since install)
+    inverter_kw: 3.8             # nameplate: SolarMax SM-SOLON-DUAL-3.8KW, 3800 W AC, 24 V battery
+                                 # portal reports "3.5KW 24V" / 3500 W for this unit - reason not known yet
+    pv_input_max_w: 6000         # nameplate MPPT rating; MPPT 60-450 V, max Voc 500 V
     grid_feed_in: false          # export "On Grid Enable Status: Disable" -> solar can be held back
     azimuth_deg: 180             # from the data: production centred at 11:52 vs solar noon 11:48
     tilt_deg: null               # TODO(owner): measure with a level app

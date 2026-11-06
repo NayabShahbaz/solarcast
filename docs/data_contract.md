@@ -82,7 +82,7 @@ Forecast log columns (**Member 3 to confirm**): `timestamp, p10_kwh, p50_kwh, p9
 
 ## Real site: `lahore_home_01` (test data only)
 
-Member 1's rooftop: SolarMax 3.5 kW hybrid inverter, "Solar of Things" portal, **no grid
+Member 1's rooftop: SolarMax SOLON DUAL 3.8 kW hybrid inverter (6 kW MPPT input), "Solar of Things" portal, **no grid
 feed-in**. Used to **test** the model on a real roof. It is never part of the training set.
 
 | File (DVC: `data/real.dvc`) | Rows | Notes |
