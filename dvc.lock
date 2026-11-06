@@ -14,12 +14,12 @@ stages:
       nfiles: 7
     - path: src/solarcast/data/pipeline.py
       hash: md5
-      md5: fad755ac478222123fab8131d0d75dfc
-      size: 8412
+      md5: 37fef184aea9e4aeb3b0f943d059cd8f
+      size: 8503
     - path: src/solarcast/data/stages.py
       hash: md5
-      md5: 674c28b87bba3e96d669375f09e2c315
-      size: 3079
+      md5: 936a3ed4bb8a6f40cc370ec1e29e33b3
+      size: 3178
     params:
       params.yaml:
         data.end_date: '2023-12-31'
@@ -54,8 +54,8 @@ stages:
       size: 1990
     - path: src/solarcast/data/pipeline.py
       hash: md5
-      md5: fad755ac478222123fab8131d0d75dfc
-      size: 8412
+      md5: 37fef184aea9e4aeb3b0f943d059cd8f
+      size: 8503
     - path: src/solarcast/data/preprocess.py
       hash: md5
       md5: 327c918bc5400b23283975aa9ecfa8cd
@@ -82,16 +82,16 @@ stages:
     outs:
     - path: data/processed
       hash: md5
-      md5: 487877f19755eda8606f007aed75422c.dir
-      size: 697059
+      md5: bec06d2f8d92e31e4130b3db91e79910.dir
+      size: 696978
       nfiles: 2
   validate:
     cmd: python -m solarcast.data.stages validate
     deps:
     - path: data/processed
       hash: md5
-      md5: 487877f19755eda8606f007aed75422c.dir
-      size: 697059
+      md5: bec06d2f8d92e31e4130b3db91e79910.dir
+      size: 696978
       nfiles: 2
     - path: src/solarcast/data/validate.py
       hash: md5
@@ -108,5 +108,5 @@ stages:
     outs:
     - path: reports/validation.json
       hash: md5
-      md5: 3a2625572619845e98e687c1e01ea291
-      size: 147
+      md5: 7d324e79748745b4523adb37dff911ae
+      size: 148
