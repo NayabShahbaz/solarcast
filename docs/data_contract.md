@@ -119,9 +119,12 @@ generation_kwh, panel_capacity_kw` plus:
   the expansion). Night is decided by sun elevation (and voltage for 5-minute data) and set to 0.
   Reported daily totals still include this noise (~0.2–0.3 kWh/day).
 - **Panel expansion in August 2025** (owner confirmed; first day at the new level: 11 Aug). Daily kWh jumps from ≤ 20 to ~30, and the midday PV
-  voltage from ~218 V to ~390 V. Panel kW before and after: **pending from the owner**
-  (`capacity_history` in `configs/sites.yaml`). Until then `panel_capacity_kw` is empty and the
-  capacity check is skipped.
+  voltage from ~218 V to ~390 V.
+- **Panels (from the labels):** original 6 × Canadian Solar 615 W = **3.69 kW**; added 4 × 590 W = **6.05 kW** total from 11 Aug 2025. `panel_capacity_kw` uses this nameplate sum (same
+  definition as the PVGIS site). All 10 panels look like one series string, so the 590 W panels'
+  lower current limits the 615 W ones: effective about 5.76 kW (~5 % mismatch loss). Same-season
+  output per unit of sunshine rose ×1.47 (Jun–Jul 2025 → 2026), below even the effective ×1.56,
+  likely because a larger array with no grid feed-in gets held back more often.
 - **Direction: south (azimuth 180°).** On clear October days production is centred at 11:52,
   against a solar noon of 11:48. **Tilt: pending from the owner.**
 

@@ -5,8 +5,8 @@ stages:
     deps:
     - path: configs/sites.yaml
       hash: md5
-      md5: 7136100e7472800027bda6814cbf03ba
-      size: 1887
+      md5: 9d0c6580fd6622a04250bf5e0cbc8d5a
+      size: 2707
     - path: src/solarcast/data/ingest
       hash: md5
       md5: 7f5519664bf019e858781d36cfeff9b2.dir
@@ -41,8 +41,8 @@ stages:
     deps:
     - path: configs/sites.yaml
       hash: md5
-      md5: 7136100e7472800027bda6814cbf03ba
-      size: 1887
+      md5: 9d0c6580fd6622a04250bf5e0cbc8d5a
+      size: 2707
     - path: data/raw
       hash: md5
       md5: f5670eb1ff48955cb76cf5e602e8e5c5.dir
