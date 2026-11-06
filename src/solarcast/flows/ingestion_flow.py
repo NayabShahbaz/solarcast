@@ -1,42 +1,31 @@
-"""[Member 1] ingestion -> validation -> preprocessing, as a Prefect flow.
+"""[Member 1] Data ingestion as a Prefect flow.
 
 Two modes:
-  history  one-off/occasional: PVGIS + Open-Meteo (+ NASA cross-check) -> data/processed/hourly.parquet
+  history  `dvc repro validate`: the ingest -> preprocess -> validate stages of dvc.yaml
+           (PVGIS + Open-Meteo + NASA cross-check -> data/processed -> Pandera checks)
   daily    scheduled: recent weather + pseudo-actuals, and tomorrow's forecast inputs for the API
 
 Run locally:
-  python -m solarcast.flows.ingestion_flow --mode history
+  python -m solarcast.flows.ingestion_flow --mode history [--force]
   python -m solarcast.flows.ingestion_flow --mode daily
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 
 from prefect import flow, get_run_logger, task
 
-from solarcast.data import pipeline, validate
+from solarcast.data import pipeline
+from solarcast.data.stages import VALIDATION_REPORT
+from solarcast.flows import _dvc
 
 
-@task(retries=2, retry_delay_seconds=60, task_run_name="ingest-history-{site[site_id]}")
-def ingest_history(site: dict, start: str | None, end: str | None) -> dict:
-    return pipeline.ingest_history(site, start, end)
-
-
-@task(task_run_name="validate-and-build-processed")
-def build_processed(raw: dict) -> tuple:
-    logger = get_run_logger()
-    try:
-        return pipeline.build_processed(raw)
-    except Exception as e:
-        if type(e).__name__ == "SchemaErrors":
-            logger.error("Pandera validation failed:\n%s", validate.failure_summary(e))
-        raise
-
-
-@task(task_run_name="save-processed")
-def save_processed(df, meta: dict) -> str:
-    return str(pipeline.save_processed(df, meta))
+@task(retries=1, retry_delay_seconds=120, task_run_name="dvc-repro-data")
+def repro_data(force: bool) -> str:
+    args = ["repro", "validate", *(["--force"] if force else [])]
+    return _dvc.run(*args)
 
 
 @task(retries=2, retry_delay_seconds=120, task_run_name="ingest-daily-{site[site_id]}")
@@ -45,19 +34,24 @@ def ingest_daily(site: dict) -> dict:
 
 
 @flow(name="solarcast-ingestion", log_prints=True)
-def ingestion_flow(mode: str = "daily", start: str | None = None, end: str | None = None) -> dict:
+def ingestion_flow(mode: str = "daily", force: bool = False) -> dict:
     logger = get_run_logger()
-    sites = pipeline.simulated_sites()
     if mode == "history":
-        raw = {s["site_id"]: ingest_history(s, start, end) for s in sites}
-        df, meta = build_processed(raw)
-        path = save_processed(df, meta)
-        logger.info("processed dataset: %s | %s", path, meta["summary"])
-        logger.info("pv_model k: %s | NASA cross-check: %s", meta["pv_model_k"], meta["crosscheck"])
-        logger.info("next: `dvc add data/processed/hourly.parquet` and commit the .dvc file")
-        return {"processed": path, "summary": meta["summary"]}
+        try:
+            out = repro_data(force)
+        except _dvc.DvcError:
+            if VALIDATION_REPORT.exists():
+                report = json.loads(VALIDATION_REPORT.read_text(encoding="utf-8"))
+                if not report.get("valid", True):
+                    logger.error("Pandera validation failed:\n%s", "\n".join(report["failures"]))
+            raise
+        logger.info("dvc repro:\n%s", out.strip())
+        meta = pipeline.load_metadata()
+        logger.info("processed dataset %s: %s", _dvc.dataset_version(), meta["summary"])
+        logger.info("next: commit dvc.lock and run `dvc push`")
+        return {"dataset_version": _dvc.dataset_version(), "summary": meta["summary"]}
     if mode == "daily":
-        out = {s["site_id"]: ingest_daily(s) for s in sites}
+        out = {s["site_id"]: ingest_daily(s) for s in pipeline.simulated_sites()}
         logger.info("daily ingestion done: %s", out)
         return out
     raise ValueError(f"unknown mode {mode!r} (use 'history' or 'daily')")
@@ -66,7 +60,6 @@ def ingestion_flow(mode: str = "daily", start: str | None = None, end: str | Non
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["history", "daily"], default="daily")
-    ap.add_argument("--start")
-    ap.add_argument("--end")
+    ap.add_argument("--force", action="store_true", help="history: rerun stages even if cached")
     a = ap.parse_args()
-    ingestion_flow(mode=a.mode, start=a.start, end=a.end)
+    ingestion_flow(mode=a.mode, force=a.force)

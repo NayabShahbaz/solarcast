@@ -1,0 +1,102 @@
+# SolarCast reproducible pipeline.  `dvc repro` rebuilds everything from scratch;
+# `dvc dag` draws it. Stages rerun only when their cmd, deps or params change.
+#
+#   ingest -> preprocess -> validate -> train_baseline -+-> evaluate
+#                                    \-> train_tft -----/
+#
+# Member 1: ingest, preprocess, validate.  Member 2: train_*, evaluate.
+stages:
+  ingest:
+    desc: Download PVGIS (target), Open-Meteo (features) and NASA POWER (cross-check) history
+    cmd: python -m solarcast.data.stages ingest
+    deps:
+      - src/solarcast/data/ingest
+      - src/solarcast/data/pipeline.py
+      - src/solarcast/data/stages.py
+      - configs/sites.yaml
+    params:
+      - data.start_date
+      - data.end_date
+      - sources
+    outs:
+      - data/raw
+
+  preprocess:
+    desc: Align sources to UTC start-of-hour, clean, interpolate short gaps, apply night rule
+    cmd: python -m solarcast.data.stages preprocess
+    deps:
+      - data/raw
+      - src/solarcast/data/preprocess.py
+      - src/solarcast/data/ingest/pv_model.py
+      - src/solarcast/data/pipeline.py
+      - src/solarcast/schemas.py
+      - configs/sites.yaml
+    params:
+      - data
+      - pv_model
+    outs:
+      - data/processed
+
+  validate:
+    desc: Pandera schema, null, range and consistency checks - fails the pipeline if any break
+    cmd: python -m solarcast.data.stages validate
+    deps:
+      - data/processed
+      - src/solarcast/data/validate.py
+      - src/solarcast/schemas.py
+    params:
+      - data.generation_capacity_margin
+      - data.night_ghi_threshold_wm2
+    metrics:
+      - reports/validation.json:
+          cache: false
+
+  # ---- Member 2 ------------------------------------------------------------------------
+  # Contract: `train --model X` trains on data/processed (chronological split from params),
+  # logs the run to DagsHub MLflow and writes models/X/ including run.json:
+  #   {"run_id": ..., "model": X, "dataset_version": ...}
+  train_baseline:
+    desc: LightGBM / Random Forest / Linear Regression baselines, logged to MLflow
+    cmd: python -m solarcast.models.train --model baselines
+    deps:
+      - data/processed
+      - reports/validation.json
+      - src/solarcast/features
+      - src/solarcast/models/baselines.py
+      - src/solarcast/models/train.py
+    params:
+      - split
+      - window
+    outs:
+      - models/baselines
+
+  train_tft:
+    desc: Temporal Fusion Transformer (small config), logged and registered in MLflow
+    cmd: python -m solarcast.models.train --model tft
+    deps:
+      - data/processed
+      - reports/validation.json
+      - src/solarcast/features
+      - src/solarcast/models/tft.py
+      - src/solarcast/models/train.py
+    params:
+      - split
+      - window
+      - tft
+    outs:
+      - models/tft
+
+  evaluate:
+    desc: MAE / RMSE (kWh) of every model on the chronological test split
+    cmd: python -m solarcast.models.evaluate
+    deps:
+      - data/processed
+      - models/baselines
+      - models/tft
+      - src/solarcast/models/evaluate.py
+    params:
+      - split
+      - promotion
+    metrics:
+      - reports/eval.json:
+          cache: false

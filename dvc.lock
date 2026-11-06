@@ -1,0 +1,112 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python -m solarcast.data.stages ingest
+    deps:
+    - path: configs/sites.yaml
+      hash: md5
+      md5: 42df5f9cfe4a7fdbfbf7f3c6afa3bd3d
+      size: 747
+    - path: src/solarcast/data/ingest
+      hash: md5
+      md5: e9de01907ed5606caa3050c2868df318.dir
+      size: 11654
+      nfiles: 7
+    - path: src/solarcast/data/pipeline.py
+      hash: md5
+      md5: bd8303a3cad5fca04359a7849b03a5fb
+      size: 8601
+    - path: src/solarcast/data/stages.py
+      hash: md5
+      md5: 674c28b87bba3e96d669375f09e2c315
+      size: 3079
+    params:
+      params.yaml:
+        data.end_date: '2023-12-31'
+        data.start_date: '2020-01-01'
+        sources:
+          pvgis_url: https://re.jrc.ec.europa.eu/api/v5_3/seriescalc
+          open_meteo_archive_url: https://archive-api.open-meteo.com/v1/archive
+          open_meteo_forecast_url: https://api.open-meteo.com/v1/forecast
+          nasa_power_url: https://power.larc.nasa.gov/api/temporal/hourly/point
+          request_timeout_s: 120
+    outs:
+    - path: data/raw
+      hash: md5
+      md5: f5670eb1ff48955cb76cf5e602e8e5c5.dir
+      size: 1660452
+      nfiles: 3
+  preprocess:
+    cmd: python -m solarcast.data.stages preprocess
+    deps:
+    - path: configs/sites.yaml
+      hash: md5
+      md5: 42df5f9cfe4a7fdbfbf7f3c6afa3bd3d
+      size: 747
+    - path: data/raw
+      hash: md5
+      md5: f5670eb1ff48955cb76cf5e602e8e5c5.dir
+      size: 1660452
+      nfiles: 3
+    - path: src/solarcast/data/ingest/pv_model.py
+      hash: md5
+      md5: b3f06075d102680e91691c5240861aee
+      size: 1990
+    - path: src/solarcast/data/pipeline.py
+      hash: md5
+      md5: bd8303a3cad5fca04359a7849b03a5fb
+      size: 8601
+    - path: src/solarcast/data/preprocess.py
+      hash: md5
+      md5: 327c918bc5400b23283975aa9ecfa8cd
+      size: 5617
+    - path: src/solarcast/schemas.py
+      hash: md5
+      md5: 8df571b0731bc56f24bc22d3a7043253
+      size: 1635
+    params:
+      params.yaml:
+        data:
+          start_date: '2020-01-01'
+          end_date: '2023-12-31'
+          timezone: Asia/Karachi
+          freq: 1h
+          feature_weather_source: open_meteo
+          crosscheck_weather_source: nasa_power
+          max_gap_hours_interpolate: 3
+          night_ghi_threshold_wm2: 5
+          generation_capacity_margin: 1.1
+        pv_model:
+          temp_coeff_per_c: -0.004
+          noct_c: 45
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: 487877f19755eda8606f007aed75422c.dir
+      size: 697059
+      nfiles: 2
+  validate:
+    cmd: python -m solarcast.data.stages validate
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 487877f19755eda8606f007aed75422c.dir
+      size: 697059
+      nfiles: 2
+    - path: src/solarcast/data/validate.py
+      hash: md5
+      md5: 6b001360f698be44fa918062f5197981
+      size: 3922
+    - path: src/solarcast/schemas.py
+      hash: md5
+      md5: 8df571b0731bc56f24bc22d3a7043253
+      size: 1635
+    params:
+      params.yaml:
+        data.generation_capacity_margin: 1.1
+        data.night_ghi_threshold_wm2: 5
+    outs:
+    - path: reports/validation.json
+      hash: md5
+      md5: a0852505478cc00e61c64d1768498182
+      size: 156

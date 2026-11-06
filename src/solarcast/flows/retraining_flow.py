@@ -56,7 +56,7 @@ def monitor_and_retrain_flow(force: bool = False, demo_drift: bool = False) -> d
     if decision["retrain"]:
         from solarcast.flows.training_flow import TrainingNotAvailable, training_flow
         try:
-            trained = training_flow()
+            trained = training_flow(force=True)  # retrain even if the data is unchanged
             promoted = promotion_gate(trained["run_id"])
             training = {"status": "trained", "promoted": promoted, **trained}
             logger.info("candidate %s promoted: %s", trained["run_id"], promoted)

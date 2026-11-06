@@ -20,8 +20,9 @@ pytest
 
 | What | Path | Versioned by |
 |---|---|---|
-| Historical API pulls (PVGIS, Open-Meteo, NASA POWER) | `data/raw/<source>/` | **DVC** (`data/raw.dvc`) |
-| Training dataset + `metadata.json` | `data/processed/` | **DVC** (`data/processed.dvc`) |
+| Historical API pulls (PVGIS, Open-Meteo, NASA POWER) | `data/raw/<source>/` | **DVC**: `ingest` stage output |
+| Training dataset + `metadata.json` | `data/processed/` | **DVC**: `preprocess` stage output |
+| Validation report | `reports/validation.json` | **DVC metrics** (in git) |
 | Daily state: recent actuals, forecast inputs, daily pulls | `data/interim/` | DagsHub bucket `daily/` |
 | Monitoring output for the dashboard | `reports/monitoring/` | DagsHub bucket `monitoring/` |
 | Experiments and models | — | DagsHub MLflow (Member 2) |
@@ -38,17 +39,39 @@ dvc pull
 
 ## 4. Run the pipeline
 
+### Reproducible batch pipeline (`dvc.yaml`)
+
+```bash
+dvc repro            # ingest -> preprocess -> validate -> train_baseline, train_tft -> evaluate
+dvc repro validate   # just the data stages (Member 1)
+dvc dag              # draw the pipeline
+dvc metrics show     # validation.json + eval.json
+```
+
+| Stage | Command | Output |
+|---|---|---|
+| `ingest` | `python -m solarcast.data.stages ingest` | `data/raw/` |
+| `preprocess` | `python -m solarcast.data.stages preprocess` | `data/processed/` |
+| `validate` | `python -m solarcast.data.stages validate` | `reports/validation.json`; **non-zero exit stops the pipeline** |
+| `train_baseline`, `train_tft` | `python -m solarcast.models.train --model …` (Member 2) | `models/<model>/` + MLflow runs |
+| `evaluate` | `python -m solarcast.models.evaluate` (Member 2) | `reports/eval.json` |
+
+Activate the venv first, because stages call `python`. DVC reruns a stage only when its code,
+params (`params.yaml`) or inputs change. `dvc repro --force` rebuilds everything from scratch.
+
+### Prefect flows (scheduling, retries, retraining)
+
 | Command | What it does | When |
 |---|---|---|
-| `python -m solarcast.flows.ingestion_flow --mode history` | PVGIS + Open-Meteo (+ NASA cross-check) → clean → Pandera → `data/processed/hourly.parquet` | once, or when sites/dates change |
+| `python -m solarcast.flows.ingestion_flow --mode history` | runs `dvc repro validate` under Prefect | once, or when sites/dates change |
 | `python -m solarcast.flows.ingestion_flow --mode daily` | last ~8 days of weather + pseudo-actuals → `data/interim/recent/`; tomorrow's 24 h inputs → `data/interim/forecast_inputs/` | daily, 20:00 PKT |
 | `python -m solarcast.flows.retraining_flow` | Evidently drift + forecast errors → `reports/monitoring/latest.json` → retrain if triggered | daily, 20:30 PKT |
 | `python -m solarcast.flows.retraining_flow --demo-drift` | same, with a controlled smog-like shift: shows drift → retraining | demo |
-| `python -m solarcast.flows.training_flow` | Member 2's train + evaluate on the current dataset version | on demand / triggered |
+| `python -m solarcast.flows.training_flow [--force]` | runs `dvc repro evaluate` (training stages); `--force` retrains even if nothing changed | on demand / triggered |
 | `python -m solarcast.flows.schedules` | serves the two daily deployments (needs `prefect server start`) | on the server |
 
-**The single workflow command** (completion check): `ingestion_flow --mode history` gets,
-validates and produces the dataset. `retraining_flow --force` then runs training on it.
+**The single workflow command** (completion check): `dvc repro` gets, validates and produces
+the dataset, then runs training on it.
 
 Each flow starts a temporary local Prefect server if `PREFECT_API_URL` is not set. To see runs
 in the UI, run `prefect server start`, open http://127.0.0.1:4200 and set
@@ -57,12 +80,15 @@ in the UI, run `prefect server start`, open http://127.0.0.1:4200 and set
 ## 5. After rebuilding the dataset: version it
 
 ```bash
-dvc add data/raw data/processed
-git add data/raw.dvc data/processed.dvc
+dvc repro validate                    # or the full `dvc repro`
+git add dvc.lock reports/validation.json
 git commit -m "data: rebuild processed dataset (<what changed>)"
 dvc push
 git tag data-v<N> && git push --tags
 ```
+
+`dvc.lock` records the exact hash of every stage's inputs and outputs. Checking out a commit
+and running `dvc pull` restores that exact data.
 
 `metadata.json` records row counts, date range, the `pv_model` scale factor `k` and the NASA
 cross-check. Mention big changes in the commit message.
