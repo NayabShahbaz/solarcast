@@ -14,8 +14,8 @@ stages:
       nfiles: 7
     - path: src/solarcast/data/pipeline.py
       hash: md5
-      md5: bd8303a3cad5fca04359a7849b03a5fb
-      size: 8601
+      md5: fad755ac478222123fab8131d0d75dfc
+      size: 8412
     - path: src/solarcast/data/stages.py
       hash: md5
       md5: 674c28b87bba3e96d669375f09e2c315
@@ -54,8 +54,8 @@ stages:
       size: 1990
     - path: src/solarcast/data/pipeline.py
       hash: md5
-      md5: bd8303a3cad5fca04359a7849b03a5fb
-      size: 8601
+      md5: fad755ac478222123fab8131d0d75dfc
+      size: 8412
     - path: src/solarcast/data/preprocess.py
       hash: md5
       md5: 327c918bc5400b23283975aa9ecfa8cd
@@ -108,5 +108,5 @@ stages:
     outs:
     - path: reports/validation.json
       hash: md5
-      md5: a0852505478cc00e61c64d1768498182
-      size: 156
+      md5: 3a2625572619845e98e687c1e01ea291
+      size: 147
