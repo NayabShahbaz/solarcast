@@ -17,6 +17,10 @@ simulation is used, not random numbers.
 | Features | **Open-Meteo** (archive + forecast API) | GHI, tilted irradiance (GTI), temperature, cloud cover, humidity, wind | The same provider serves history *and* the next-day forecast, so training and prediction inputs match |
 | Cross-check | **NASA POWER** | GHI, temperature, humidity, wind | An independent satellite source, used only to sanity-check Open-Meteo |
 
+All training data comes from one reference system (10 kW, 20° tilt, south-facing). The model
+predicts output **per kW**, and the API multiplies by each user's system size. This works for any
+system size, but assumes a roughly south-facing roof. Other orientations are a stated limitation.
+
 The training dataset covers 2020-01-01 to 2023-12-31 (PVGIS only provides years up to 2023).
 The split is set in `params.yaml`: train 2020–2022, validation 2023 H1, test 2023 H2.
 

@@ -13,6 +13,26 @@ Processed file: `data/processed/hourly.parquet` (DVC-tracked), with `metadata.js
 | NASA POWER | Ingested as a **cross-check** only (`metadata.json → crosscheck`) | Proposal source; sanity-checks Open-Meteo irradiance |
 | Recent actuals (2024+) | **`pv_model`**: PV model on Open-Meteo tilted irradiance, scaled to PVGIS | Deployed system needs 7 days of generation history every day |
 | Splits | train 2020–2022, val 2023 H1, test 2023 H2 (`params.yaml → split`) | Chronological, no leakage |
+| System size | **Model works per kW** (see below) | Training data is one 10 kW system; users have other sizes |
+
+## Target per kW (agreed 2026-11-06)
+
+The training data comes from **one reference system**: 10 kW, tilt 20°, facing south
+(azimuth 180°), 14 % losses (`configs/sites.yaml`). So that one model serves any system size:
+
+- **Member 2 (training):** predict `generation_kwh / panel_capacity_kw`, i.e. kWh per kW
+  (between 0 and 1.1). Lag/history features made from `generation_kwh` are divided by capacity the
+  same way. The processed file stays in kWh. Divide while building the windows, in one place.
+- **Member 2 (`predict.py`):** multiply the per-kW forecast (p10/p50/p90) by the request's
+  `panel_capacity_kw` before returning it.
+- **Member 3 (API):** `/predict` already requires `panel_capacity_kw`. Responses stay in kWh.
+- **Evaluation:** report metrics in kWh for the 10 kW reference site, and also per kW
+  (MAE ÷ 10), so results compare across sizes.
+
+**Limitation (state in the report):** generation scales with size, but **not** with tilt or
+orientation. Forecasts assume a roughly south-facing roof at a typical tilt (`gti_wm2` is also
+computed for 20° south). East/west or flat roofs will have a different daily curve. Covering
+those would need more simulated systems plus tilt/azimuth columns (a schema change).
 
 ## Columns
 
