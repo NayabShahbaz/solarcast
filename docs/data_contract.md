@@ -118,7 +118,7 @@ generation_kwh, panel_capacity_kw` plus:
 - **Night noise.** Readings show 0.01–0.08 kW at night (up to ~90 V on the longer string after
   the expansion). Night is decided by sun elevation (and voltage for 5-minute data) and set to 0.
   Reported daily totals still include this noise (~0.2–0.3 kWh/day).
-- **Panel expansion around 10–11 Aug 2025.** Daily kWh jumps from ≤ 20 to ~30, and the midday PV
+- **Panel expansion in August 2025** (owner confirmed; first day at the new level: 11 Aug). Daily kWh jumps from ≤ 20 to ~30, and the midday PV
   voltage from ~218 V to ~390 V. Panel kW before and after: **pending from the owner**
   (`capacity_history` in `configs/sites.yaml`). Until then `panel_capacity_kw` is empty and the
   capacity check is skipped.

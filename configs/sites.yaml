@@ -26,8 +26,10 @@ sites:
     grid_feed_in: false          # export "On Grid Enable Status: Disable" -> solar can be held back
     azimuth_deg: 180             # from the data: production centred at 11:52 vs solar noon 11:48
     tilt_deg: null               # TODO(owner): measure with a level app
-    # TODO(owner): panel kW from panel count x Pmax. The data shows an expansion around
-    # 2025-08-10/11 (daily kWh jumps from <=20 to ~30). Fill in, e.g.:
+    # Panel expansion: August 2025 (owner confirmed), unchanged since. Exact day not known: the
+    # data's first day above the old system's best is 2025-08-11 (29.5 kWh; max before: 20.3).
+    # Only daily-only data falls in that week, so the day doesn't affect hourly testing.
+    # TODO(owner): panel kW = panel count x Pmax, before and after, then fill in:
     #   capacity_history:
     #     - {from: "2025-06-16", panel_capacity_kw: ...}
     #     - {from: "2025-08-11", panel_capacity_kw: ...}
