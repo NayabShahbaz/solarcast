@@ -78,7 +78,11 @@ those would need more simulated systems plus tilt/azimuth columns (a schema chan
 | `data/interim/forecasts/<site_id>_<date>.parquet` | daily prediction / API (Member 3) | error monitoring (Member 1) |
 | `reports/monitoring/latest.json`, `history.jsonl`, `drift_<site>.html` | monitoring | dashboard (Member 3) |
 
-Forecast log columns (**Member 3 to confirm**): `timestamp, p10_kwh, p50_kwh, p90_kwh, model_version`.
+Forecast log columns (**confirmed by Member 3, 2026-11-09**): `timestamp, p10_kwh, p50_kwh, p90_kwh, model_version`.
+One row per hour (24 per file). `timestamp` is the UTC start of the hour, the `*_kwh` values are
+already scaled by the site's `panel_capacity_kw` (not per kW), and `model_version` is the value the
+API returns in `PredictResponse.model_version`. These match `HourlyForecast` in
+`src/solarcast/api/schemas.py`.
 
 ## Real site: `lahore_home_01` (test data only)
 

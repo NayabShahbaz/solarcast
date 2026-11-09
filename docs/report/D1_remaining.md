@@ -89,7 +89,7 @@ Don't commit `models/` or any weights to Git: DVC tracks `models/*` as stage out
 - [ ] Accept the invitations, clone, branch (e.g. `member3-api`), install `.[data,api,dev,dashboard]`.
 - [ ] Make your own commits through PRs. The README pass, CI badge and PDF sources below count,
   and so does the API skeleton work.
-- [ ] Confirm the **forecast log columns** in [data_contract.md](../data_contract.md)
+- [x] Confirm the **forecast log columns** in [data_contract.md](../data_contract.md)
   (`timestamp, p10_kwh, p50_kwh, p90_kwh, model_version`).
 
 ### 1. PDF compilation (3–4 pages)
@@ -116,15 +116,15 @@ Steps:
   says not to commit it).
 
 ### 2. README final pass
-- [ ] Team line: names next to roll numbers, plus who owns what (Member 1/2/3 areas).
-- [ ] Links at the top: GitHub, DagsHub, MLflow.
+- [x] Team line: names next to roll numbers, plus who owns what (Member 1/2/3 areas).
+- [x] Links at the top: GitHub, DagsHub, MLflow.
 - [ ] "Reproduce" section works copy-paste on a **fresh clone**:
   `uv pip install -e ".[data,api,dev,train]"`, `.env` setup, `python scripts/configure_dvc_remote.py`,
   `dvc pull`, `dvc repro`.
 - [ ] Mention the registered model (`solarcast-tft`, Staging) once Member 2 has it.
-- [ ] Add the CI badge:
+- [x] Add the CI badge:
   `![CI](https://github.com/NayabShahbaz/solarcast/actions/workflows/ci.yml/badge.svg)`
-- [ ] Remove anything that's out of date (placeholders, "TODO", AWS bits that no longer apply
+- [x] Remove anything that's out of date (placeholders, "TODO", AWS bits that no longer apply
   to data/MLflow).
 
 ### 3. CI green on `main`
