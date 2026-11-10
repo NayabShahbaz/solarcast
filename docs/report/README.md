@@ -10,7 +10,9 @@ one person merges them into the PDF.
 | `dvc_dag.png` | Member 1 | `dvc dag` output (required screenshot) |
 | `dvc_dag.txt` / `dvc_dag.md` | Member 1 | Same graph as plain text / Mermaid |
 | *(Member 2)* | Member 2 | Models, metrics, ≥2 MLflow runs screenshot, registered model in **Staging** screenshot |
-| *(Member 3)* | Member 3 | API/deployment section; **compiles the PDF**, README pass, CI green |
+| `member3_problem_arch.md` | Member 3 | Problem + architecture (Figure 1) |
+| `member3_part.md` | Member 3 | Repository and reproducibility (README, `.gitignore`, PR workflow + CI, reproduce steps); Member 3 also **compiles the PDF** |
+| `d2_api_deploy_draft.md` | Member 3 | API / Docker / deployment draft, kept for D2 (not in the D1 PDF) |
 
 Required in the PDF (from the D1 brief): repo + DagsHub/MLflow links, screenshots of ≥2 MLflow
 runs, the registered model in Staging/Production, and `dvc dag`.
