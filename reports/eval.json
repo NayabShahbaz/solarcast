@@ -1,0 +1,25 @@
+{
+  "baselines": {
+    "mae_kwh": 0.45659566611368596,
+    "rmse_kwh": 0.7489847685021326,
+    "all_hours_mae_kwh": 0.23999129733922114,
+    "all_hours_rmse_kwh": 0.530340429910728,
+    "mae_per_kw": 0.04565956661136859,
+    "rmse_per_kw": 0.07489847685021325,
+    "hours": 4392,
+    "daylight_hours": 2193
+  },
+  "tft": {
+    "mae_kwh": 0.46652143594879786,
+    "rmse_kwh": 0.8067749282312469,
+    "all_hours_mae_kwh": 0.2376257750442668,
+    "all_hours_rmse_kwh": 0.5704498218856112,
+    "mae_per_kw": 0.046652143594879784,
+    "rmse_per_kw": 0.0806774928231247,
+    "hours": 4392,
+    "daylight_hours": 2193
+  },
+  "best": "baselines",
+  "dataset_type": "PVGIS simulated generation",
+  "primary_metrics": "Daylight-hour MAE and RMSE in kWh"
+}
