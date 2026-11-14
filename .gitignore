@@ -31,6 +31,7 @@ mlartifacts/
 lightning_logs/
 reports/monitoring/*
 !reports/monitoring/.gitkeep
+/reports/evaluation/
 
 # Prefect local state
 .prefect/

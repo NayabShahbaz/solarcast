@@ -56,47 +56,66 @@ stages:
   # logs the run to DagsHub MLflow and writes models/X/ including run.json:
   #   {"run_id": ..., "model": X, "dataset_version": ...}
   train_baseline:
-    desc: LightGBM / Random Forest / Linear Regression baselines, logged to MLflow
+    desc: Train Linear Regression and log to remote MLflow
     cmd: python -m solarcast.models.train --model baselines
     deps:
       - data/processed
       - reports/validation.json
+      - src/solarcast/config.py
       - src/solarcast/features
       - src/solarcast/models/baselines.py
       - src/solarcast/models/train.py
+      - requirements-models.txt
     params:
       - split
       - window
+      - data.timezone
     outs:
       - models/baselines
 
   train_tft:
-    desc: Temporal Fusion Transformer (small config), logged and registered in MLflow
+    desc: Train TFT and register it in remote MLflow Staging
     cmd: python -m solarcast.models.train --model tft
     deps:
       - data/processed
       - reports/validation.json
+      - src/solarcast/config.py
       - src/solarcast/features
       - src/solarcast/models/tft.py
       - src/solarcast/models/train.py
+      - src/solarcast/models/train_tft.py
+      - requirements-models.txt
     params:
       - split
       - window
       - tft
+      - data.timezone
     outs:
       - models/tft
 
   evaluate:
-    desc: MAE / RMSE (kWh) of every model on the chronological test split
+    desc: Evaluate both models on identical validation and test hours
     cmd: python -m solarcast.models.evaluate
     deps:
       - data/processed
       - models/baselines
       - models/tft
+      - src/solarcast/config.py
+      - src/solarcast/features
+      - src/solarcast/models/baselines.py
+      - src/solarcast/models/tft.py
+      - src/solarcast/models/train.py
+      - src/solarcast/models/train_tft.py
       - src/solarcast/models/evaluate.py
+      - requirements-models.txt
     params:
       - split
-      - promotion
+      - window
+      - tft.batch_size
+      - data.timezone
+      - data.night_ghi_threshold_wm2
+    outs:
+      - reports/evaluation
     metrics:
       - reports/eval.json:
           cache: false

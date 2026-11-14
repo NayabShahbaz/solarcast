@@ -110,3 +110,186 @@ stages:
       hash: md5
       md5: 7d324e79748745b4523adb37dff911ae
       size: 148
+  train_baseline:
+    cmd: python -m solarcast.models.train --model baselines
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: bec06d2f8d92e31e4130b3db91e79910.dir
+      size: 696978
+      nfiles: 2
+    - path: reports/validation.json
+      hash: md5
+      md5: 7d324e79748745b4523adb37dff911ae
+      size: 148
+    - path: requirements-models.txt
+      hash: md5
+      md5: 38c0cb65b82fc06a513f3f4a6b30ac89
+      size: 3196
+    - path: src/solarcast/config.py
+      hash: md5
+      md5: e5dc3112cbd9e9265633bf141d9ecf3f
+      size: 1147
+    - path: src/solarcast/features
+      hash: md5
+      md5: c0318ebf8e65c61dae7f826868d147df.dir
+      size: 7145
+      nfiles: 6
+    - path: src/solarcast/models/baselines.py
+      hash: md5
+      md5: a2c88b0037fdc9db73f22eea1050d275
+      size: 2850
+    - path: src/solarcast/models/train.py
+      hash: md5
+      md5: da9dcc30dba50753c8a6d881998f1fa8
+      size: 5330
+    params:
+      params.yaml:
+        data.timezone: Asia/Karachi
+        split:
+          train_end: '2022-12-31'
+          val_end: '2023-06-30'
+        window:
+          history_hours: 168
+          horizon_hours: 24
+    outs:
+    - path: models/baselines
+      hash: md5
+      md5: 98c3c2aaeefc35a6880301e268ae9ec0.dir
+      size: 2092
+      nfiles: 2
+  train_tft:
+    cmd: python -m solarcast.models.train --model tft
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: bec06d2f8d92e31e4130b3db91e79910.dir
+      size: 696978
+      nfiles: 2
+    - path: reports/validation.json
+      hash: md5
+      md5: 7d324e79748745b4523adb37dff911ae
+      size: 148
+    - path: requirements-models.txt
+      hash: md5
+      md5: 38c0cb65b82fc06a513f3f4a6b30ac89
+      size: 3196
+    - path: src/solarcast/config.py
+      hash: md5
+      md5: e5dc3112cbd9e9265633bf141d9ecf3f
+      size: 1147
+    - path: src/solarcast/features
+      hash: md5
+      md5: c0318ebf8e65c61dae7f826868d147df.dir
+      size: 7145
+      nfiles: 6
+    - path: src/solarcast/models/tft.py
+      hash: md5
+      md5: 3cfeaffdcd9a3ca069436915ebf8a09c
+      size: 2977
+    - path: src/solarcast/models/train.py
+      hash: md5
+      md5: da9dcc30dba50753c8a6d881998f1fa8
+      size: 5330
+    - path: src/solarcast/models/train_tft.py
+      hash: md5
+      md5: aaad1dda8e90a55c9fb7d99489318155
+      size: 7287
+    params:
+      params.yaml:
+        data.timezone: Asia/Karachi
+        split:
+          train_end: '2022-12-31'
+          val_end: '2023-06-30'
+        tft:
+          hidden_size: 16
+          attention_head_size: 2
+          dropout: 0.1
+          learning_rate: 0.003
+          max_epochs: 5
+          batch_size: 64
+          quantiles:
+          - 0.1
+          - 0.5
+          - 0.9
+        window:
+          history_hours: 168
+          horizon_hours: 24
+    outs:
+    - path: models/tft
+      hash: md5
+      md5: 023eb5464e1931117e82c59192fab5c6.dir
+      size: 2435378
+      nfiles: 5
+  evaluate:
+    cmd: python -m solarcast.models.evaluate
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: bec06d2f8d92e31e4130b3db91e79910.dir
+      size: 696978
+      nfiles: 2
+    - path: models/baselines
+      hash: md5
+      md5: 98c3c2aaeefc35a6880301e268ae9ec0.dir
+      size: 2092
+      nfiles: 2
+    - path: models/tft
+      hash: md5
+      md5: 023eb5464e1931117e82c59192fab5c6.dir
+      size: 2435378
+      nfiles: 5
+    - path: requirements-models.txt
+      hash: md5
+      md5: 38c0cb65b82fc06a513f3f4a6b30ac89
+      size: 3196
+    - path: src/solarcast/config.py
+      hash: md5
+      md5: e5dc3112cbd9e9265633bf141d9ecf3f
+      size: 1147
+    - path: src/solarcast/features
+      hash: md5
+      md5: c0318ebf8e65c61dae7f826868d147df.dir
+      size: 7145
+      nfiles: 6
+    - path: src/solarcast/models/baselines.py
+      hash: md5
+      md5: a2c88b0037fdc9db73f22eea1050d275
+      size: 2850
+    - path: src/solarcast/models/evaluate.py
+      hash: md5
+      md5: ea52bc9bfa7f075c486c65c05e24349f
+      size: 7409
+    - path: src/solarcast/models/tft.py
+      hash: md5
+      md5: 3cfeaffdcd9a3ca069436915ebf8a09c
+      size: 2977
+    - path: src/solarcast/models/train.py
+      hash: md5
+      md5: da9dcc30dba50753c8a6d881998f1fa8
+      size: 5330
+    - path: src/solarcast/models/train_tft.py
+      hash: md5
+      md5: aaad1dda8e90a55c9fb7d99489318155
+      size: 7287
+    params:
+      params.yaml:
+        data.night_ghi_threshold_wm2: 5
+        data.timezone: Asia/Karachi
+        split:
+          train_end: '2022-12-31'
+          val_end: '2023-06-30'
+        tft.batch_size: 64
+        window:
+          history_hours: 168
+          horizon_hours: 24
+    outs:
+    - path: reports/eval.json
+      hash: md5
+      md5: 7129336c1e2379546f415f6698e77822
+      size: 769
+    - path: reports/evaluation
+      hash: md5
+      md5: 0d6ef6bb40106c5057a7fb646b5b895e.dir
+      size: 1924692
+      nfiles: 4
